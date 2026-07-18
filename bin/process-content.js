@@ -4,10 +4,16 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'url';
 import matter from 'gray-matter';
 import readingTime from 'reading-time';
-import * as glob from 'glob';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Lists .md files under dir (optionally recursive), full paths.
+function findMarkdownFiles(dir, { recursive = false } = {}) {
+  return fs.readdirSync(dir, { recursive })
+    .filter(name => name.endsWith('.md'))
+    .map(name => path.join(dir, name));
+}
 
 // Find project root (traverse up until we find content/)
 function findProjectRoot() {
@@ -52,7 +58,7 @@ async function processPosts(PROJECT_ROOT) {
   }
 
   // Find all markdown files in content/posts
-  const postFiles = glob.sync(path.join(POSTS_DIR, '**/*.md'));
+  const postFiles = findMarkdownFiles(POSTS_DIR, { recursive: true });
 
   if (postFiles.length === 0) {
     console.log('⚠️  No markdown files found in posts directory');
@@ -83,6 +89,9 @@ async function processPosts(PROJECT_ROOT) {
       excerpt: data.excerpt || '',
       coverImage: data.coverImage,
       tags: data.tags || [],
+      layout: data.layout || 'default',
+      primaryAuthor: data.primaryAuthor,
+      opponentAuthor: data.opponentAuthor,
       content: content,
       readingTime: stats.text
     };
@@ -117,7 +126,7 @@ async function processPages(PROJECT_ROOT) {
   }
 
   // Find all markdown files in content/pages
-  const pageFiles = glob.sync(path.join(PAGES_DIR, '*.md'));
+  const pageFiles = findMarkdownFiles(PAGES_DIR);
 
   if (pageFiles.length === 0) {
     console.log('⚠️  No markdown files found in pages directory');
