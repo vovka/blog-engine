@@ -1,23 +1,26 @@
+import { useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeHighlight from 'rehype-highlight';
 import { getPostBySlug } from '@content/posts';
-import MarkdownVideoLink from '../components/blog/MarkdownVideoLink';
-import MarkdownVideoParagraph from '../components/blog/MarkdownVideoParagraph';
+import { markdownRemarkPlugins, markdownRehypePlugins, markdownComponents } from '../components/blog/markdownConfig';
+import DialogueContent from '../components/blog/DialogueContent';
 import Layout from '../components/layout/Layout';
 
 function BlogPost() {
   const { slug } = useParams();
   const post = getPostBySlug(slug);
+  const [showOpponent, setShowOpponent] = useState(true);
 
   if (!post) {
     return <Navigate to="/404" replace />;
   }
 
+  const isDialogue = post.layout === 'dialogue';
+  const containerClassName = `blog-post-container${isDialogue && showOpponent ? ' blog-post-container--dialogue' : ''}`;
+
   return (
     <Layout>
-      <div className="blog-post-container">
+      <div className={containerClassName}>
         <article className="blog-post">
           {post.coverImage && (
             <div className="blog-post-image">
@@ -48,16 +51,34 @@ function BlogPost() {
                 <span className="reading-time">{post.readingTime}</span>
               </div>
             </div>
+
+            {isDialogue && (
+              <button
+                type="button"
+                className="dialogue-toggle"
+                aria-pressed={showOpponent}
+                onClick={() => setShowOpponent(value => !value)}
+              >
+                {showOpponent ? 'Hide second opinion' : 'Show second opinion'}
+              </button>
+            )}
           </div>
 
           <div className="blog-post-content">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeHighlight]}
-              components={{ a: MarkdownVideoLink, p: MarkdownVideoParagraph }}
-            >
-              {post.content}
-            </ReactMarkdown>
+            {isDialogue ? (
+              <DialogueContent
+                content={post.content}
+                showOpponent={showOpponent}
+              />
+            ) : (
+              <ReactMarkdown
+                remarkPlugins={markdownRemarkPlugins}
+                rehypePlugins={markdownRehypePlugins}
+                components={markdownComponents}
+              >
+                {post.content}
+              </ReactMarkdown>
+            )}
           </div>
 
           {post.tags && post.tags.length > 0 && (
