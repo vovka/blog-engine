@@ -92,6 +92,8 @@ async function processPosts(PROJECT_ROOT) {
       layout: data.layout || 'default',
       primaryAuthor: data.primaryAuthor,
       opponentAuthor: data.opponentAuthor,
+      commentsEnabled: data.comments === true,
+      commentId: data.commentId || slug,
       content: content,
       readingTime: stats.text
     };
