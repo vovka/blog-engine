@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { getPostBySlug } from '@content/posts';
+import config from '@config';
 import { markdownRemarkPlugins, markdownRehypePlugins, markdownComponents } from '../components/blog/markdownConfig';
 import DialogueContent from '../components/blog/DialogueContent';
+import GiscusComments from '../components/comments/GiscusComments';
 import Layout from '../components/layout/Layout';
 
 function BlogPost() {
@@ -88,6 +90,13 @@ function BlogPost() {
               ))}
             </div>
           )}
+
+          <GiscusComments
+            enabled={post.commentsEnabled === true}
+            commentId={post.commentId ?? post.slug}
+            slug={post.slug}
+            config={config.comments}
+          />
         </article>
       </div>
     </Layout>
