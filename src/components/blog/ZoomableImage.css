@@ -1,0 +1,128 @@
+.zoomable-image {
+  cursor: zoom-in;
+}
+
+.zoomable-image:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 4px;
+}
+
+.image-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  background: rgba(0, 0, 0, 0.94);
+  color: #ffffff;
+}
+
+.image-lightbox__toolbar {
+  min-height: 64px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 24px;
+  padding: 10px 16px;
+  background: rgba(20, 20, 20, 0.98);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.image-lightbox__controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.image-lightbox__toolbar button {
+  min-width: 40px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.image-lightbox__toolbar button:hover,
+.image-lightbox__toolbar button:focus-visible {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.image-lightbox__toolbar button:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.image-lightbox__zoom {
+  min-width: 64px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.image-lightbox__hint {
+  margin: 0;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 14px;
+}
+
+.image-lightbox__close {
+  justify-self: end;
+  font-size: 28px !important;
+  line-height: 1;
+}
+
+.image-lightbox__viewport {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable both-edges;
+}
+
+.image-lightbox__canvas {
+  width: max-content;
+  min-width: 100%;
+  height: max-content;
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.image-lightbox__image {
+  display: block;
+  max-width: none !important;
+  max-height: none !important;
+  height: auto;
+  margin: 0 !important;
+  border-radius: 8px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.45);
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+@media (max-width: 720px) {
+  .image-lightbox__toolbar {
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .image-lightbox__controls {
+    overflow-x: auto;
+    padding: 2px;
+  }
+
+  .image-lightbox__hint {
+    display: none;
+  }
+
+  .image-lightbox__canvas {
+    padding: 12px;
+  }
+}
