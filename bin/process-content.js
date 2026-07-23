@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { fileURLToPath } from 'url';
+import { pathToFileURL } from 'node:url';
 import matter from 'gray-matter';
 import readingTime from 'reading-time';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { loadEnv } from 'vite';
+import { writeSitemap } from './generate-sitemap.js';
 
 // Lists .md files under dir (optionally recursive), full paths.
 function findMarkdownFiles(dir, { recursive = false } = {}) {
@@ -31,13 +30,35 @@ async function processContent() {
   const PROJECT_ROOT = findProjectRoot();
 
   // Process posts
-  await processPosts(PROJECT_ROOT);
+  const posts = await processPosts(PROJECT_ROOT);
 
   // Process pages
-  await processPages(PROJECT_ROOT);
+  const pages = await processPages(PROJECT_ROOT);
 
   // Generate metadata
   await generateMetadata(PROJECT_ROOT);
+
+  // Generate sitemap when a canonical site URL is configured
+  await generateSitemap(PROJECT_ROOT, posts, pages);
+}
+
+async function generateSitemap(PROJECT_ROOT, posts, pages) {
+  const configUrl = pathToFileURL(path.join(PROJECT_ROOT, 'blog.config.js')).href;
+  const env = loadEnv(process.env.NODE_ENV || 'production', PROJECT_ROOT, '');
+  let config = {};
+  try {
+    config = (await import(configUrl)).default || {};
+  } catch {
+    console.warn('⚠️  blog.config.js uses browser-only environment values; using .env for sitemap');
+  }
+  const siteUrl = env.VITE_SITE_URL || config.siteUrl;
+  if (!siteUrl) {
+    console.warn('⚠️  Skipped sitemap.xml: configure siteUrl or VITE_SITE_URL');
+    return;
+  }
+  writeSitemap(PROJECT_ROOT, { posts, pages, siteUrl, basePath: config.basePath });
+  console.log(`✅ Generated sitemap.xml`);
+  console.log(`📦 Output: ${path.join(PROJECT_ROOT, 'public/sitemap.xml')}`);
 }
 
 async function processPosts(PROJECT_ROOT) {
@@ -54,7 +75,7 @@ async function processPosts(PROJECT_ROOT) {
     const emptyOutput = generatePostsOutput([]);
     fs.writeFileSync(OUTPUT_FILE, emptyOutput);
     console.log(`✅ Generated empty posts file`);
-    return;
+    return [];
   }
 
   // Find all markdown files in content/posts
@@ -65,7 +86,7 @@ async function processPosts(PROJECT_ROOT) {
     const emptyOutput = generatePostsOutput([]);
     fs.writeFileSync(OUTPUT_FILE, emptyOutput);
     console.log(`✅ Generated empty posts file`);
-    return;
+    return [];
   }
 
   console.log(`📝 Found ${postFiles.length} post(s)`);
@@ -108,6 +129,7 @@ async function processPosts(PROJECT_ROOT) {
   fs.writeFileSync(OUTPUT_FILE, output);
   console.log(`✅ Processed ${posts.length} blog post(s)`);
   console.log(`📦 Output: ${OUTPUT_FILE}`);
+  return posts;
 }
 
 async function processPages(PROJECT_ROOT) {
@@ -124,7 +146,7 @@ async function processPages(PROJECT_ROOT) {
     const emptyOutput = generatePagesOutput([]);
     fs.writeFileSync(OUTPUT_FILE, emptyOutput);
     console.log(`✅ Generated empty pages file`);
-    return;
+    return [];
   }
 
   // Find all markdown files in content/pages
@@ -135,7 +157,7 @@ async function processPages(PROJECT_ROOT) {
     const emptyOutput = generatePagesOutput([]);
     fs.writeFileSync(OUTPUT_FILE, emptyOutput);
     console.log(`✅ Generated empty pages file`);
-    return;
+    return [];
   }
 
   console.log(`📄 Found ${pageFiles.length} page(s)`);
@@ -159,6 +181,7 @@ async function processPages(PROJECT_ROOT) {
     return {
       slug,
       title,
+      description: data.description || '',
       order: data.order !== undefined ? data.order : 999,
       content: content
     };

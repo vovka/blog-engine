@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
+import PageMetadata from '../components/analytics/PageMetadata';
 
 function NotFound() {
   return (
     <div className="not-found-container">
+      <PageMetadata title="Page not found" noindex />
       <div className="not-found-content">
         <h1 className="not-found-title">404</h1>
         <p className="not-found-message">Page not found</p>

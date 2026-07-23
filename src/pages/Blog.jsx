@@ -3,6 +3,8 @@ import { posts } from '@content/posts';
 import Layout from '../components/layout/Layout';
 import SearchBar from '../components/common/SearchBar';
 import BlogGrid from '../components/blog/BlogGrid';
+import PageMetadata from '../components/analytics/PageMetadata';
+import config from '@config';
 
 function Blog() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -23,6 +25,7 @@ function Blog() {
   if (posts.length === 0) {
     return (
       <Layout>
+        <PageMetadata title="Blog" description={config.description} canonicalPath="/" />
         <div className="no-posts-container">
           <p className="no-posts">No posts yet. Run <code>npx blog-engine process</code> to generate posts.</p>
         </div>
@@ -32,6 +35,7 @@ function Blog() {
 
   return (
     <Layout>
+      <PageMetadata title="Blog" description={config.description} canonicalPath="/" />
       <div className="search-section">
         <h2 className="page-title">Blog</h2>
         <SearchBar value={searchQuery} onChange={setSearchQuery} />

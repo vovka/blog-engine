@@ -12,18 +12,19 @@ import './App.css';
 function App() {
   return (
     <BrowserRouter>
-      <ScrollToTop />
-      <GitHubPagesRedirect />
-      <AnalyticsProvider />
-      <Routes>
-        <Route path="/" element={<Blog />} />
-        {pages.map(page => (
-          <Route key={page.slug} path={`/${page.slug}`} element={<StaticPage />} />
-        ))}
-        <Route path="/:slug" element={<BlogPost />} />
-        <Route path="/404" element={<NotFound />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      <AnalyticsProvider>
+        <ScrollToTop />
+        <GitHubPagesRedirect />
+        <Routes>
+          <Route path="/" element={<Blog />} />
+          {pages.map(page => (
+            <Route key={page.slug} path={`/${page.slug}`} element={<StaticPage />} />
+          ))}
+          <Route path="/:slug" element={<BlogPost />} />
+          <Route path="/404" element={<NotFound />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </AnalyticsProvider>
     </BrowserRouter>
   );
 }
