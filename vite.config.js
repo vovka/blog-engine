@@ -21,6 +21,7 @@ const copy404Plugin = () => ({
 });
 
 export default defineConfig({
+  envDir: process.cwd(),
   plugins: [react(), copy404Plugin()],
   root: path.resolve(__dirname),
   publicDir: path.resolve(process.cwd(), 'public'),
