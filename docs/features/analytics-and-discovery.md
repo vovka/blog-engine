@@ -13,6 +13,7 @@ route metadata, and sitemap generation. Provider failures are isolated so one se
 - `src/components/analytics/ArticleAnalytics.jsx`: scroll, read, and outbound-link events.
 - `src/components/analytics/PageMetadata.jsx`: route-specific title, canonical, social, and robots metadata.
 - `bin/generate-sitemap.js`: canonical sitemap serialization.
+- `bin/generate-robots.js`: static crawl policy and sitemap declaration.
 - `bin/process-content.js`: content processing and sitemap orchestration.
 - `src/config/resolveBlogConfig.js`: shared defaults, instance, environment, and validation precedence.
 - `src/config/environment.js`: compatibility-preserving `VITE_*` parsing and aliases.
@@ -59,6 +60,10 @@ back to `comments.canonicalBaseUrl`, then the current origin.
 Analytics and indexing default off. Development and test configurations with malformed settings emit actionable
 diagnostics and fail closed. Production builds reject malformed URLs, hosts, provider IDs, indexing values, and
 incomplete consent settings. Route-level noindex always wins.
+
+Content processing writes a static `public/robots.txt` on every run. It disallows crawling by default and emits an
+absolute sitemap declaration when a canonical site URL is configured. `public/sitemap.xml` is only generated when
+that URL exists.
 
 ## Testing Strategy
 

@@ -5,6 +5,7 @@ import matter from 'gray-matter';
 import readingTime from 'reading-time';
 import { loadEnv } from 'vite';
 import { writeSitemap } from './generate-sitemap.js';
+import { writeRobots } from './generate-robots.js';
 import { loadBlogConfig } from '../src/config/loadBlogConfig.js';
 
 // Lists .md files under dir (optionally recursive), full paths.
@@ -38,16 +39,22 @@ async function processContent() {
   // Generate metadata
   await generateMetadata(PROJECT_ROOT);
 
-  // Generate sitemap when a canonical site URL is configured
-  await generateSitemap(PROJECT_ROOT, posts, pages);
+  // Generate robots.txt and sitemap.xml from the shared resolved configuration
+  await generateDiscovery(PROJECT_ROOT, posts, pages);
 }
 
-async function generateSitemap(PROJECT_ROOT, posts, pages) {
+async function generateDiscovery(PROJECT_ROOT, posts, pages) {
   const env = loadEnv(process.env.NODE_ENV || 'production', PROJECT_ROOT, '');
   const config = await loadBlogConfig(PROJECT_ROOT, { ...process.env, ...env }, {
     strict: process.env.GEEK_BLOG_STRICT_CONFIG === '1',
     warn: console.warn,
   });
+  const robotsPath = writeRobots(PROJECT_ROOT, {
+    index: config.robots.index,
+    siteUrl: config.siteUrl,
+  });
+  console.log(`✅ Generated robots.txt`);
+  console.log(`📦 Output: ${robotsPath}`);
   if (!config.siteUrl) {
     console.warn('⚠️  Skipped sitemap.xml: configure siteUrl or VITE_SITE_URL');
     return;

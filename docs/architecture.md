@@ -25,6 +25,7 @@ Environment parsing, canonical URL, analytics hosts and IDs, and robots profile 
 
 Analytics is disabled and indexing is denied by default. Development and test diagnostics fail closed. Vite
 production builds reject malformed canonical URLs, hosts, provider IDs, indexing settings, and consent settings.
+Content processing derives both `public/robots.txt` and `public/sitemap.xml` from the same resolved configuration.
 
 ## Release And Mirror
 
