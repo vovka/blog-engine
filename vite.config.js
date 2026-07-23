@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { loadBlogConfig } from './src/config/loadBlogConfig.js';
+import { createContentAliases } from './src/content/createContentAliases.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -31,13 +32,6 @@ const configPlugin = config => ({
   },
 });
 
-const aliases = projectRoot => ({
-  '@content/posts': path.resolve(projectRoot, 'content', 'posts.js'),
-  '@content/pages': path.resolve(projectRoot, 'content', 'pages.js'),
-  '@content/metadata': path.resolve(projectRoot, 'content', 'metadata.js'),
-  '@content': path.resolve(projectRoot, 'content'),
-});
-
 export default defineConfig(async ({ command, mode }) => {
   const projectRoot = process.cwd();
   const env = { ...process.env, ...loadEnv(mode, projectRoot, '') };
@@ -51,7 +45,7 @@ export default defineConfig(async ({ command, mode }) => {
     root: path.resolve(__dirname),
     publicDir: path.resolve(projectRoot, 'public'),
     build: { outDir: path.resolve(projectRoot, 'dist'), emptyOutDir: true },
-    resolve: { alias: aliases(projectRoot) },
+    resolve: { alias: createContentAliases(projectRoot, __dirname) },
     server: { port: 3000, host: '0.0.0.0', fs: { allow: ['..'] } },
     preview: { port: 3000, host: '0.0.0.0' },
   };
