@@ -1,17 +1,33 @@
 {
   "name": "blog-engine",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
   },
-  "keywords": [],
-  "author": "",
+  "files": [
+    "bin",
+    "src",
+    "templates",
+    "index.html",
+    "vite.config.js",
+    "LICENSE",
+    "README.md"
+  ],
+  "keywords": ["blog", "markdown", "vite", "yalc"],
+  "author": "Geek Blog contributors",
   "license": "ISC",
-  "description": "",
+  "description": "Canonical public Markdown blog engine and pinned Yalc workspace CLI",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/geek-blog/blog-engine.git"
+  },
+  "engines": {
+    "node": "20.x"
+  },
   "dependencies": {
     "@giscus/react": "3.1.0",
     "@vitejs/plugin-react": "^5.1.1",
@@ -31,8 +47,5 @@
   "type": "module",
   "bin": {
     "blog-engine": "./bin/blog-engine.js"
-  },
-  "devDependencies": {
-    "yalc": "^1.0.0-pre.53"
   }
 }

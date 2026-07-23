@@ -1,0 +1,25 @@
+name: Detect fallback mirror drift
+
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Compare source trees and tags
+        run: |
+          canonical_tags="$(git ls-remote --tags https://github.com/geek-blog/blog-engine.git | sort)"
+          mirror_tags="$(git ls-remote --tags https://github.com/vovka/blog-engine.git | sort)"
+          test "$canonical_tags" = "$mirror_tags"
+          git remote add mirror https://github.com/vovka/blog-engine.git
+          git fetch mirror main
+          test "$(git rev-parse HEAD^{tree})" = "$(git rev-parse mirror/main^{tree})"
