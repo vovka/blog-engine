@@ -7,6 +7,7 @@ import {
   ENHANCER_REPOSITORY,
 } from '../bin/workspace/constants.js';
 import { validateLock } from '../bin/workspace/lock.js';
+import { repositoryName } from '../bin/workspace/git.js';
 import { parsePinChanges } from '../bin/workspace/update.js';
 
 const sha = 'a'.repeat(40);
@@ -50,4 +51,9 @@ test('parses only explicit update pins', () => {
   assert.deepEqual(parsePinChanges(['--engine', sha]), { engine: sha });
   assert.throws(() => parsePinChanges([]), /Specify/);
   assert.throws(() => parsePinChanges(['--branch', 'main']), /Unknown/);
+});
+
+test('normalizes HTTPS and SSH GitHub origins to one repository identity', () => {
+  assert.equal(repositoryName(ENGINE_REPOSITORY), 'geek-blog/blog-engine');
+  assert.equal(repositoryName('git@github.com:geek-blog/blog-engine.git'), 'geek-blog/blog-engine');
 });

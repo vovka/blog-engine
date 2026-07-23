@@ -47,7 +47,10 @@ const sourcePath = lock => {
   return path.join(cacheRoot(), 'sources', key, lock.engine.commit);
 };
 
-const repositoryName = value => value.replace(/\.git$/, '').split('/').slice(-2).join('/');
+const repositoryName = value => value
+  .replace(/^git@[^:]+:/, '')
+  .replace(/^https?:\/\/[^/]+\//, '')
+  .replace(/\.git$/, '');
 
 const validateSource = (source, lock) => {
   const head = run('git', ['rev-parse', 'HEAD'], { cwd: source, capture: true });
