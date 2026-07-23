@@ -16,15 +16,27 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Check mirror credential
+        id: credential
+        env:
+          GH_TOKEN: ${{ secrets.GEEK_BLOG_MIRROR_TOKEN }}
+        run: |
+          if [ -n "$GH_TOKEN" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Mirror credential is unavailable; skipping synchronization."
+          fi
       - name: Configure authenticated Git transport
+        if: steps.credential.outputs.available == 'true'
         env:
           GH_TOKEN: ${{ secrets.GEEK_BLOG_MIRROR_TOKEN }}
         run: gh auth setup-git
       - name: Merge canonical history into fallback
+        if: steps.credential.outputs.available == 'true'
         env:
           GH_TOKEN: ${{ secrets.GEEK_BLOG_MIRROR_TOKEN }}
         run: |
-          test -n "$GH_TOKEN"
           git remote add mirror https://github.com/vovka/blog-engine.git
           git fetch mirror main --tags
           git config user.name "geek-blog mirror"
@@ -33,3 +45,10 @@ jobs:
           git merge --no-edit "$GITHUB_SHA"
           git push mirror mirror-main:main
           git push mirror --tags
+      - name: Verify fallback source tree
+        run: |
+          git remote get-url mirror >/dev/null 2>&1 ||
+            git remote add mirror https://github.com/vovka/blog-engine.git
+          git fetch mirror main
+          test "$(git rev-parse "$GITHUB_SHA^{tree}")" = \
+            "$(git rev-parse 'mirror/main^{tree}')"
