@@ -14,6 +14,8 @@ route metadata, and sitemap generation. Provider failures are isolated so one se
 - `src/components/analytics/PageMetadata.jsx`: route-specific title, canonical, social, and robots metadata.
 - `bin/generate-sitemap.js`: canonical sitemap serialization.
 - `bin/process-content.js`: content processing and sitemap orchestration.
+- `src/config/resolveBlogConfig.js`: shared defaults, instance, environment, and validation precedence.
+- `src/config/environment.js`: compatibility-preserving `VITE_*` parsing and aliases.
 
 ## How It Works
 
@@ -30,7 +32,8 @@ visibility. Outbound event URLs contain only origin and pathname. Custom event n
 
 ## Configuration
 
-The generated `blog.config.js` template reads these values from the consuming content repository:
+The engine resolves safe defaults, then the instance's thin `blog.config.js`, then these whitelisted environment
+overrides:
 
 - `VITE_SITE_URL`
 - `VITE_ANALYTICS_ENABLED`
@@ -39,17 +42,23 @@ The generated `blog.config.js` template reads these values from the consuming co
 - `VITE_ANALYTICS_GA4_MEASUREMENT_ID`
 - `VITE_ANALYTICS_CLARITY_PROJECT_ID`
 - `VITE_ANALYTICS_CONSENT_REQUIRED`
+- `VITE_ANALYTICS_STORAGE_KEY`
+- `VITE_ANALYTICS_CONSENT_POLICY_VERSION`
+- `VITE_ANALYTICS_PRIVACY_PAGE_PATH`
 - `VITE_SITE_PROFILE`
 - `VITE_ROBOTS_INDEX`
 
-`vite.config.js` sets `envDir` to the consuming repository. Keep test and production values in separate
-deployment environments. The older `VITE_GA4_MEASUREMENT_ID` and `VITE_CLARITY_PROJECT_ID` names remain aliases.
+Instance configuration owns branding, author, base path, comments, and consent policy. Environment parsing,
+canonical URLs, analytics hosts and IDs, and robots profiles are engine-owned. The older
+`VITE_GA4_MEASUREMENT_ID` and `VITE_CLARITY_PROJECT_ID` names remain aliases, and legacy instance fields continue
+to resolve below explicit environment values.
 
-`VITE_SITE_URL` is also read by `blog-engine process` to generate `public/sitemap.xml`. `siteUrl` in the exported
-config is a fallback. Canonical metadata falls back to `comments.canonicalBaseUrl`, then the current origin.
+`VITE_SITE_URL` is also used by `blog-engine process` to generate `public/sitemap.xml`. Canonical metadata falls
+back to `comments.canonicalBaseUrl`, then the current origin.
 
-Robots metadata defaults to `noindex,nofollow` for development, staging, and test profiles. Production remains
-`index,follow`. Set `robots.index` through `VITE_ROBOTS_INDEX` for an explicit override; route-level noindex wins.
+Analytics and indexing default off. Development and test configurations with malformed settings emit actionable
+diagnostics and fail closed. Production builds reject malformed URLs, hosts, provider IDs, indexing values, and
+incomplete consent settings. Route-level noindex always wins.
 
 ## Testing Strategy
 
@@ -67,6 +76,7 @@ Cookie removal covers the current hostname and parent-domain candidates used by 
 - Establish the Google denied default before calling any `gtag` config command.
 - Preserve the exact Clarity keys `ad_Storage` and `analytics_Storage`.
 - Always supply a canonical `VITE_SITE_URL` before generating a deployable sitemap.
+- Keep environment parsing out of instance `blog.config.js` files.
 - Search Console cannot validate localhost activity; submit the deployed `/sitemap.xml` instead.
 - A package-root `npm run build` cannot resolve consumer-owned config/content and is not a valid build check.
 

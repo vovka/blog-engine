@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { pathToFileURL } from 'node:url';
 import matter from 'gray-matter';
 import readingTime from 'reading-time';
 import { loadEnv } from 'vite';
 import { writeSitemap } from './generate-sitemap.js';
+import { loadBlogConfig } from '../src/config/loadBlogConfig.js';
 
 // Lists .md files under dir (optionally recursive), full paths.
 function findMarkdownFiles(dir, { recursive = false } = {}) {
@@ -43,20 +43,16 @@ async function processContent() {
 }
 
 async function generateSitemap(PROJECT_ROOT, posts, pages) {
-  const configUrl = pathToFileURL(path.join(PROJECT_ROOT, 'blog.config.js')).href;
   const env = loadEnv(process.env.NODE_ENV || 'production', PROJECT_ROOT, '');
-  let config = {};
-  try {
-    config = (await import(configUrl)).default || {};
-  } catch {
-    console.warn('⚠️  blog.config.js uses browser-only environment values; using .env for sitemap');
-  }
-  const siteUrl = env.VITE_SITE_URL || config.siteUrl;
-  if (!siteUrl) {
+  const config = await loadBlogConfig(PROJECT_ROOT, { ...process.env, ...env }, {
+    strict: process.env.GEEK_BLOG_STRICT_CONFIG === '1',
+    warn: console.warn,
+  });
+  if (!config.siteUrl) {
     console.warn('⚠️  Skipped sitemap.xml: configure siteUrl or VITE_SITE_URL');
     return;
   }
-  writeSitemap(PROJECT_ROOT, { posts, pages, siteUrl, basePath: config.basePath });
+  writeSitemap(PROJECT_ROOT, { posts, pages, siteUrl: config.siteUrl, basePath: config.basePath });
   console.log(`✅ Generated sitemap.xml`);
   console.log(`📦 Output: ${path.join(PROJECT_ROOT, 'public/sitemap.xml')}`);
 }

@@ -1,0 +1,53 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import {
+  ENGINE_COMMANDS,
+  ENGINE_REPOSITORY,
+  ENHANCER_COMMANDS,
+  ENHANCER_REPOSITORY,
+} from '../bin/workspace/constants.js';
+import { validateLock } from '../bin/workspace/lock.js';
+import { parsePinChanges } from '../bin/workspace/update.js';
+
+const sha = 'a'.repeat(40);
+const validLock = {
+  schemaVersion: 1,
+  engine: {
+    repository: ENGINE_REPOSITORY,
+    commit: sha,
+    package: 'blog-engine',
+    commands: ENGINE_COMMANDS,
+  },
+  enhancer: {
+    optional: true,
+    repository: ENHANCER_REPOSITORY,
+    commit: sha,
+    package: 'blog-enhancer',
+    commands: ENHANCER_COMMANDS,
+  },
+};
+
+test('accepts the canonical exact-pin schema', () => {
+  assert.deepEqual(validateLock(structuredClone(validLock)), validLock);
+});
+
+test('rejects fallback repositories and moving refs', () => {
+  const fallback = structuredClone(validLock);
+  fallback.engine.repository = 'https://github.com/vovka/blog-engine.git';
+  assert.throws(() => validateLock(fallback), /must use/);
+  const branch = structuredClone(validLock);
+  branch.engine.commit = 'main';
+  assert.throws(() => validateLock(branch), /40-character SHA/);
+});
+
+test('requires the complete command contract', () => {
+  const incomplete = structuredClone(validLock);
+  incomplete.engine.commands = ['setup', 'build'];
+  assert.throws(() => validateLock(incomplete), /commands are incomplete/);
+});
+
+test('parses only explicit update pins', () => {
+  assert.deepEqual(parsePinChanges(['--engine', sha]), { engine: sha });
+  assert.throws(() => parsePinChanges([]), /Specify/);
+  assert.throws(() => parsePinChanges(['--branch', 'main']), /Unknown/);
+});

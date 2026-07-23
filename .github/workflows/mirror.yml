@@ -1,0 +1,35 @@
+name: Synchronize fallback mirror
+
+on:
+  push:
+    branches: [main]
+    tags: ['*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synchronize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Configure authenticated Git transport
+        env:
+          GH_TOKEN: ${{ secrets.GEEK_BLOG_MIRROR_TOKEN }}
+        run: gh auth setup-git
+      - name: Merge canonical history into fallback
+        env:
+          GH_TOKEN: ${{ secrets.GEEK_BLOG_MIRROR_TOKEN }}
+        run: |
+          test -n "$GH_TOKEN"
+          git remote add mirror https://github.com/vovka/blog-engine.git
+          git fetch mirror main --tags
+          git config user.name "geek-blog mirror"
+          git config user.email "actions@users.noreply.github.com"
+          git checkout -B mirror-main mirror/main
+          git merge --no-edit "$GITHUB_SHA"
+          git push mirror mirror-main:main
+          git push mirror --tags
