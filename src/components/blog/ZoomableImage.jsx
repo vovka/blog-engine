@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import './ZoomableImage.css';
 
 const MIN_ZOOM = 0.05;
 const MAX_ZOOM = 5;
@@ -20,7 +21,14 @@ function calculateFitZoom(width, height) {
   return Math.min(1, availableWidth / width, availableHeight / height);
 }
 
-function ZoomableImage({ alt = '', className = '', onClick, onKeyDown, ...imageProps }) {
+function ZoomableImage({
+  alt = '',
+  className = '',
+  node: _node,
+  onClick,
+  onKeyDown,
+  ...imageProps
+}) {
   const [open, setOpen] = useState(false);
   const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 });
   const [fitZoom, setFitZoom] = useState(1);
@@ -28,6 +36,7 @@ function ZoomableImage({ alt = '', className = '', onClick, onKeyDown, ...imageP
   const triggerRef = useRef(null);
   const viewportRef = useRef(null);
   const closeButtonRef = useRef(null);
+  const fitZoomRef = useRef(1);
   const hintId = useId();
 
   const close = () => setOpen(false);
@@ -66,6 +75,7 @@ function ZoomableImage({ alt = '', className = '', onClick, onKeyDown, ...imageP
     const height = event.currentTarget.naturalHeight;
     const nextFitZoom = calculateFitZoom(width, height);
 
+    fitZoomRef.current = nextFitZoom;
     setNaturalSize({ width, height });
     setFitZoom(nextFitZoom);
     setZoom(nextFitZoom);
@@ -117,7 +127,7 @@ function ZoomableImage({ alt = '', className = '', onClick, onKeyDown, ...imageP
       if (event.key === 'Escape') close();
       if (event.key === '+' || event.key === '=') zoomBy(ZOOM_STEP);
       if (event.key === '-') zoomBy(1 / ZOOM_STEP);
-      if (event.key === '0') changeZoom(fitZoom);
+      if (event.key === '0') changeZoom(fitZoomRef.current);
       if (event.key === '1') changeZoom(1);
     };
 
@@ -128,7 +138,7 @@ function ZoomableImage({ alt = '', className = '', onClick, onKeyDown, ...imageP
       document.removeEventListener('keydown', handleKeyDown);
       triggerRef.current?.focus();
     };
-  }, [open, fitZoom]);
+  }, [open]);
 
   const imageWidth = naturalSize.width ? `${naturalSize.width * zoom}px` : 'auto';
   const zoomPercentage = Math.round(zoom * 100);
