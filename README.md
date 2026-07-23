@@ -6,11 +6,9 @@ owns analytics and discovery configuration, and bootstraps exact Yalc packages f
 ## Ownership
 
 - Canonical repository: `geek-blog/blog-engine`
-- Fallback mirror: `vovka/blog-engine`
 - License: ISC
 
-Consumers must pin a 40-character commit from the canonical repository in `geek-blog.lock.json`. The mirror is
-for recovery only and must never appear in an official dependency, lock, launcher, or workflow.
+Consumers must pin a 40-character commit from the canonical repository in `geek-blog.lock.json`.
 
 ## Workspace
 

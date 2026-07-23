@@ -32,10 +32,10 @@ test('accepts the canonical exact-pin schema', () => {
   assert.deepEqual(validateLock(structuredClone(validLock)), validLock);
 });
 
-test('rejects fallback repositories and moving refs', () => {
-  const fallback = structuredClone(validLock);
-  fallback.engine.repository = 'https://github.com/vovka/blog-engine.git';
-  assert.throws(() => validateLock(fallback), /must use/);
+test('rejects noncanonical repositories and moving refs', () => {
+  const noncanonical = structuredClone(validLock);
+  noncanonical.engine.repository = 'https://github.com/example/blog-engine.git';
+  assert.throws(() => validateLock(noncanonical), /must use/);
   const branch = structuredClone(validLock);
   branch.engine.commit = 'main';
   assert.throws(() => validateLock(branch), /40-character SHA/);
