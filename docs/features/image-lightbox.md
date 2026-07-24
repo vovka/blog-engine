@@ -2,9 +2,9 @@
 
 ## Overview
 
-Article-cover and article-body Markdown images open in a full-screen lightbox. The trigger is mouse- and
+Article-cover and Markdown images open in a full-screen lightbox. The trigger is mouse- and
 keyboard-accessible, while the viewer supports zooming, scrolling, body-scroll locking, and focus restoration.
-Blog-card images, author avatars, and static-page Markdown images remain ordinary images.
+Blog-card images and author avatars remain ordinary images.
 
 ## Purpose
 
@@ -20,7 +20,9 @@ configuration, the engine version, or the workspace lock schema.
 - `src/components/blog/imageLightboxUtils.js`: testable fit, pointer-anchor, focus-wrap, and keyboard policies.
 - `src/components/blog/MarkdownImageLinkContext.js`: identifies images rendered inside Markdown links.
 - `src/components/blog/MarkdownVideoLink.jsx`: preserves normal navigation for linked Markdown images.
-- `src/components/blog/markdownConfig.js`: registers `ZoomableImage` as the shared article Markdown `img` renderer.
+- `src/components/blog/MarkdownImage.jsx`: preserves Mermaid image classification and delegates Markdown images
+  to `ZoomableImage`.
+- `src/components/blog/markdownConfig.js`: registers the composed renderer in the shared Markdown component map.
 - `src/components/blog/BlogPostHeader.jsx`: renders an article's cover image through `ZoomableImage`.
 - `src/pages/BlogPost.jsx`, `src/components/blog/DialogueContent.jsx`, and
   `src/components/blog/DialoguePair.jsx`: consume the shared Markdown component map.
@@ -46,10 +48,11 @@ change only when the reader had not chosen another zoom. Zoom is clamped from 5%
 
 ## Integration Points
 
-Article-body Markdown uses `markdownComponents` for standard and dialogue layouts, so its images receive the
-lightbox automatically. When an image is inside a Markdown link, `MarkdownVideoLink` supplies link context and the
-image remains a normal link target rather than becoming a nested button-like trigger. `BlogPostHeader` opts article
-covers in directly. `BlogCard`, author-avatar rendering, and `StaticPage` are intentionally unchanged.
+Article and static-page Markdown use `markdownComponents`, so their images receive the lightbox automatically.
+`MarkdownImage` retains the `mermaid-diagram` class on generated Mermaid SVGs before delegating to
+`ZoomableImage`. When an image is inside a Markdown link, `MarkdownVideoLink` supplies link context and the image
+remains a normal link target rather than becoming a nested button-like trigger. `BlogPostHeader` opts article
+covers in directly. `BlogCard` and author-avatar rendering remain unchanged.
 
 ## Configuration
 
@@ -62,10 +65,10 @@ Run `npm test` for fit sizing, pointer anchoring, focus wrapping, shortcut filte
 the engine's existing Node suite. Run `npm run build` for a standalone engine build; consumer content aliases fall
 back to the engine's empty content modules.
 
-In a browser, exercise small and oversized raster images, SVGs, article covers, regular Markdown, and dialogue
-Markdown. Verify toolbar actions, all keyboard shortcuts, Enter/Space activation, Escape close, Ctrl+wheel
+In a browser, exercise small and oversized raster images, generated Mermaid SVGs, article covers, regular Markdown,
+and dialogue Markdown. Verify toolbar actions, all keyboard shortcuts, Enter/Space activation, Escape close, Ctrl+wheel
 pointer-centered zoom, scrolling at enlarged sizes, focus restoration, body-scroll restoration, and the toolbar at
-widths below 720px. Confirm cards, avatars, and static-page images do not open the viewer.
+widths below 720px. Confirm cards and avatars do not open the viewer.
 
 ## Important Patterns And Pitfalls
 
@@ -78,6 +81,7 @@ widths below 720px. Confirm cards, avatars, and static-page images do not open t
 - Compensate pointer zoom per axis so scroll clamping leaves an explicit image offset rather than losing the anchor.
 - Coalesce same-frame wheel events around their first stable pointer anchor before applying the final compensation.
 - Keep linked Markdown images as links to avoid nesting a button-like image trigger inside an anchor.
+- Compose through `MarkdownImage` so Mermaid SVGs retain their presentation class and lightbox behavior.
 - Keep the cover focus outline inset because `.blog-post-image` clips overflow.
 - The viewer is browser-only; `calculateFitZoom` guards access to `window`.
 - Preserve the full transplant sequence. Source commit `5a9348d` imports the stylesheet added by the following

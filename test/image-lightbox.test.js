@@ -121,9 +121,15 @@ test('keeps linked Markdown images as links and standalone images as lightbox tr
   const { markdownComponents } = await vite.ssrLoadModule('/src/components/blog/markdownConfig.js');
   const standalone = renderMarkdown('![Diagram](/diagram.svg)', markdownComponents);
   const linked = renderMarkdown('[![Diagram](/diagram.svg)](/original.svg)', markdownComponents);
+  const mermaid = renderMarkdown(
+    '![Flow](/mermaid/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.svg)',
+    markdownComponents,
+  );
 
   assert.match(standalone, /role="button"/);
   assert.match(standalone, /Open full-size viewer/);
+  assert.match(mermaid, /class="zoomable-image mermaid-diagram"/);
+  assert.match(mermaid, /role="button"/);
   assert.match(linked, /<a href="\/original\.svg"><img src="\/diagram\.svg" alt="Diagram"\/><\/a>/);
   assert.doesNotMatch(linked, /role="button"/);
 });
