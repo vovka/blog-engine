@@ -8,21 +8,15 @@ const markdownImage = readFileSync(
 );
 const appCss = readFileSync(new URL('../src/App.css', import.meta.url), 'utf8');
 
-test('ordinary Markdown images remain plain and unchanged', () => {
-  const ordinaryBranch = markdownImage.slice(
-    markdownImage.indexOf('if (!isMermaidAssetUrl(src))'),
-    markdownImage.indexOf('const classes'),
-  );
-  assert.match(ordinaryBranch, /return <img src=\{src\}/);
-  assert.match(ordinaryBranch, /className=\{className \|\| undefined\}/);
-  assert.match(ordinaryBranch, /\{\.\.\.props\} \/>;/);
+test('ordinary Markdown images delegate to the lightbox renderer', () => {
+  assert.match(markdownImage, /import ZoomableImage from '\.\/ZoomableImage';/);
+  assert.match(markdownImage, /return <ZoomableImage src=\{src\}/);
 });
 
-test('Mermaid assets remain plain images without scrolling semantics', () => {
-  assert.match(markdownImage, /const classes = \[className, 'mermaid-diagram'\]/);
-  assert.match(markdownImage, /return <img src=\{src\} className=\{classes\} \{\.\.\.props\} \/>;/);
+test('Mermaid assets preserve their presentation class in the lightbox renderer', () => {
+  assert.match(markdownImage, /isMermaidAssetUrl\(src\) \? 'mermaid-diagram' : ''/);
+  assert.match(markdownImage, /className=\{classes \|\| undefined\}/);
   assert.doesNotMatch(markdownImage, /<(?:div|figure|section)\b/i);
-  assert.doesNotMatch(markdownImage, /\b(?:role|tabIndex|tabindex|overflow)\b/);
 });
 
 test('Mermaid images fit their content container', () => {

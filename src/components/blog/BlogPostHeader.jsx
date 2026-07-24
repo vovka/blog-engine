@@ -1,9 +1,11 @@
+import ZoomableImage from './ZoomableImage';
+
 function BlogPostHeader({ post, showOpponent, onToggle }) {
   const isDialogue = post.layout === 'dialogue';
   return <>
     {post.coverImage && (
       <div className="blog-post-image">
-        <img src={post.coverImage} alt={post.title} />
+        <ZoomableImage src={post.coverImage} alt={post.title} />
       </div>
     )}
     <div className="blog-post-header">
