@@ -14,6 +14,10 @@ const packagePath = (projectRoot, packageName) => path.join(projectRoot, '.yalc'
 
 const readSourcePackage = source => readJson(path.join(source, 'package.json'));
 
+const digestPublishedPackage = target => digestDirectory(target, {
+  ignoredDirectories: ['node_modules'],
+});
+
 export const validateDependency = (projectRoot, packageName) => {
   const manifest = readJson(path.join(projectRoot, 'package.json'));
   const expected = `file:.yalc/${packageName}`;
@@ -46,5 +50,5 @@ export const verifyYalcPackage = (projectRoot, packageName) => {
   if (!manifest.version.endsWith(`+${signature.slice(0, 8)}`)) {
     throw new Error(`Yalc version signature mismatch for ${packageName}.`);
   }
-  return { digest: digestDirectory(target), signature, version: manifest.version };
+  return { digest: digestPublishedPackage(target), signature, version: manifest.version };
 };
