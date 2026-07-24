@@ -65,6 +65,9 @@ removes obsolete SVGs without launching Chromium. A failed render removes only s
 - Bump `SVG_OUTPUT_POLICY` whenever SVG sanitization, normalization, or other byte-level post-processing changes so
   browsers and CDNs never reuse an asset URL for different SVG bytes.
 - Do not pass `--no-sandbox`. The runtime must provide Chromium libraries and run as a non-root user.
+- On Ubuntu 24.04 GitHub runners, hydrate dependencies before rendering, install Puppeteer's `chrome_sandbox` as a
+  root-owned `4755` helper, and export its path through `CHROME_DEVEL_SANDBOX`. This keeps the pinned browser
+  sandboxed when AppArmor blocks unprivileged user namespaces.
 - Do not replace the direct Node renderer with the CLI Markdown mode; its numbered filenames are not content
   addressed and do not participate in the engine transaction.
 - Keep generated URLs absolute within `basePath`, such as `/mermaid/<hash>.svg` or
