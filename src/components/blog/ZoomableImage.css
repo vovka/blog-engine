@@ -7,6 +7,10 @@
   outline-offset: 4px;
 }
 
+.blog-post-image .zoomable-image:focus-visible {
+  outline-offset: -3px;
+}
+
 .image-lightbox {
   position: fixed;
   inset: 0;

@@ -1,4 +1,5 @@
 import { Children } from 'react';
+import MarkdownImageLinkContext from './MarkdownImageLinkContext';
 
 const GITHUB_ATTACHMENT_VIDEO_PATTERN = /^https:\/\/github\.com\/user-attachments\/assets\/[0-9a-f-]{36}(?:[?#].*)?$/i;
 const DIRECT_VIDEO_PATTERN = /^(?:https?:\/\/|\/).+\.(mp4|webm|mov|m4v)(?:[?#].*)?$/i;
@@ -31,7 +32,9 @@ function MarkdownVideoLink({ href = '', children, node, ...props }) {
 
   return (
     <a href={href} {...props}>
-      {children}
+      <MarkdownImageLinkContext value>
+        {children}
+      </MarkdownImageLinkContext>
     </a>
   );
 }

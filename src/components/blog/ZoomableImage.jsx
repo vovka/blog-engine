@@ -1,27 +1,32 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useContext, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import MarkdownImageLinkContext from './MarkdownImageLinkContext';
+import {
+  ZOOM_STEP,
+  calculateFitZoom,
+  calculatePointerAnchor,
+  calculatePointerScrollDelta,
+  clampZoom,
+  findFocusWrapTarget,
+  getLightboxKeyAction,
+} from './imageLightboxUtils';
 import './ZoomableImage.css';
 
-const MIN_ZOOM = 0.05;
-const MAX_ZOOM = 5;
-const ZOOM_STEP = 1.2;
-const VIEWPORT_HORIZONTAL_PADDING = 48;
-const VIEWPORT_VERTICAL_PADDING = 120;
+const FOCUSABLE_SELECTOR = 'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])';
 
-function clamp(value, minimum, maximum) {
-  return Math.min(maximum, Math.max(minimum, value));
+function trapFocus(event, lightbox) {
+  if (event.key !== 'Tab' || !lightbox) return;
+
+  const focusable = [...lightbox.querySelectorAll(FOCUSABLE_SELECTOR)];
+  const active = document.activeElement;
+  const target = findFocusWrapTarget(event, focusable, active, lightbox.contains(active));
+  if (!target) return;
+
+  event.preventDefault();
+  target.focus();
 }
 
-function calculateFitZoom(width, height) {
-  if (!width || !height || typeof window === 'undefined') return 1;
-
-  const availableWidth = Math.max(1, window.innerWidth - VIEWPORT_HORIZONTAL_PADDING);
-  const availableHeight = Math.max(1, window.innerHeight - VIEWPORT_VERTICAL_PADDING);
-
-  return Math.min(1, availableWidth / width, availableHeight / height);
-}
-
-function ZoomableImage({
+function LightboxImage({
   alt = '',
   className = '',
   node: _node,
@@ -34,9 +39,13 @@ function ZoomableImage({
   const [fitZoom, setFitZoom] = useState(1);
   const [zoom, setZoom] = useState(1);
   const triggerRef = useRef(null);
+  const lightboxRef = useRef(null);
   const viewportRef = useRef(null);
+  const lightboxImageRef = useRef(null);
   const closeButtonRef = useRef(null);
+  const zoomRef = useRef(1);
   const fitZoomRef = useRef(1);
+  const fitSelectedRef = useRef(true);
   const hintId = useId();
 
   const close = () => setOpen(false);
@@ -47,14 +56,28 @@ function ZoomableImage({
     setOpen(true);
   };
 
-  const changeZoom = nextZoom => {
-    setZoom(currentZoom => {
-      const value = typeof nextZoom === 'function' ? nextZoom(currentZoom) : nextZoom;
-      return clamp(value, MIN_ZOOM, MAX_ZOOM);
-    });
+  const changeZoom = (nextZoom, fitSelected = false) => {
+    const value = typeof nextZoom === 'function' ? nextZoom(zoomRef.current) : nextZoom;
+    const clampedValue = clampZoom(value);
+
+    fitSelectedRef.current = fitSelected;
+    zoomRef.current = clampedValue;
+    setZoom(clampedValue);
   };
 
   const zoomBy = factor => changeZoom(currentZoom => currentZoom * factor);
+
+  const updateFitZoom = (width, height, resetZoom = false) => {
+    const nextFitZoom = calculateFitZoom(width, height);
+
+    fitZoomRef.current = nextFitZoom;
+    setFitZoom(nextFitZoom);
+    if (!resetZoom && !fitSelectedRef.current) return;
+
+    fitSelectedRef.current = true;
+    zoomRef.current = nextFitZoom;
+    setZoom(nextFitZoom);
+  };
 
   const handleInlineClick = event => {
     onClick?.(event);
@@ -73,12 +96,9 @@ function ZoomableImage({
   const handleLightboxImageLoad = event => {
     const width = event.currentTarget.naturalWidth;
     const height = event.currentTarget.naturalHeight;
-    const nextFitZoom = calculateFitZoom(width, height);
 
-    fitZoomRef.current = nextFitZoom;
     setNaturalSize({ width, height });
-    setFitZoom(nextFitZoom);
-    setZoom(nextFitZoom);
+    updateFitZoom(width, height, true);
   };
 
   const handleWheel = event => {
@@ -87,32 +107,30 @@ function ZoomableImage({
     event.preventDefault();
 
     const viewport = viewportRef.current;
-    const currentZoom = zoom;
-    const nextZoom = clamp(
-      event.deltaY < 0 ? currentZoom * ZOOM_STEP : currentZoom / ZOOM_STEP,
-      MIN_ZOOM,
-      MAX_ZOOM,
-    );
+    const image = lightboxImageRef.current;
+    const currentZoom = zoomRef.current;
+    const nextZoom = clampZoom(event.deltaY < 0 ? currentZoom * ZOOM_STEP : currentZoom / ZOOM_STEP);
 
     if (nextZoom === currentZoom) return;
 
-    if (!viewport) {
-      setZoom(nextZoom);
+    if (!viewport || !image) {
+      changeZoom(nextZoom);
       return;
     }
 
-    const rect = viewport.getBoundingClientRect();
-    const pointerX = event.clientX - rect.left;
-    const pointerY = event.clientY - rect.top;
-    const contentX = viewport.scrollLeft + pointerX;
-    const contentY = viewport.scrollTop + pointerY;
-    const ratio = nextZoom / currentZoom;
+    const anchor = calculatePointerAnchor(event.clientX, event.clientY, image.getBoundingClientRect());
 
-    setZoom(nextZoom);
+    changeZoom(nextZoom);
 
     requestAnimationFrame(() => {
-      viewport.scrollLeft = contentX * ratio - pointerX;
-      viewport.scrollTop = contentY * ratio - pointerY;
+      const delta = calculatePointerScrollDelta(
+        event.clientX,
+        event.clientY,
+        anchor,
+        image.getBoundingClientRect(),
+      );
+      viewport.scrollLeft += delta.left;
+      viewport.scrollTop += delta.top;
     });
   };
 
@@ -124,11 +142,23 @@ function ZoomableImage({
     closeButtonRef.current?.focus();
 
     const handleKeyDown = event => {
-      if (event.key === 'Escape') close();
-      if (event.key === '+' || event.key === '=') zoomBy(ZOOM_STEP);
-      if (event.key === '-') zoomBy(1 / ZOOM_STEP);
-      if (event.key === '0') changeZoom(fitZoomRef.current);
-      if (event.key === '1') changeZoom(1);
+      if (event.key === 'Tab') {
+        trapFocus(event, lightboxRef.current);
+        return;
+      }
+
+      const editing = Boolean(
+        event.target?.closest?.('input, textarea, select, [contenteditable="true"]'),
+      );
+      const action = getLightboxKeyAction(event, editing);
+      if (!action || event.defaultPrevented) return;
+
+      event.preventDefault();
+      if (action === 'close') close();
+      if (action === 'zoom-in') zoomBy(ZOOM_STEP);
+      if (action === 'zoom-out') zoomBy(1 / ZOOM_STEP);
+      if (action === 'fit') changeZoom(fitZoomRef.current, true);
+      if (action === 'actual-size') changeZoom(1);
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -138,6 +168,29 @@ function ZoomableImage({
       document.removeEventListener('keydown', handleKeyDown);
       triggerRef.current?.focus();
     };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || !naturalSize.width || !naturalSize.height) return undefined;
+
+    const handleResize = () => updateFitZoom(naturalSize.width, naturalSize.height);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
+  }, [open, naturalSize.width, naturalSize.height]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const viewport = viewportRef.current;
+    viewport?.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => viewport?.removeEventListener('wheel', handleWheel);
   }, [open]);
 
   const imageWidth = naturalSize.width ? `${naturalSize.width * zoom}px` : 'auto';
@@ -160,6 +213,7 @@ function ZoomableImage({
 
       {open && createPortal(
         <div
+          ref={lightboxRef}
           className="image-lightbox"
           role="dialog"
           aria-modal="true"
@@ -171,7 +225,7 @@ function ZoomableImage({
               <button type="button" onClick={() => zoomBy(1 / ZOOM_STEP)} aria-label="Zoom out">−</button>
               <span className="image-lightbox__zoom" aria-live="polite">{zoomPercentage}%</span>
               <button type="button" onClick={() => zoomBy(ZOOM_STEP)} aria-label="Zoom in">+</button>
-              <button type="button" onClick={() => changeZoom(fitZoom)}>Fit</button>
+              <button type="button" onClick={() => changeZoom(fitZoom, true)}>Fit</button>
               <button type="button" onClick={() => changeZoom(1)}>100%</button>
             </div>
             <p id={hintId} className="image-lightbox__hint">Ctrl + wheel to zoom · scroll to pan</p>
@@ -186,10 +240,11 @@ function ZoomableImage({
             </button>
           </div>
 
-          <div ref={viewportRef} className="image-lightbox__viewport" onWheel={handleWheel}>
+          <div ref={viewportRef} className="image-lightbox__viewport">
             <div className="image-lightbox__canvas">
               <img
                 {...imageProps}
+                ref={lightboxImageRef}
                 alt={alt}
                 className="image-lightbox__image"
                 draggable="false"
@@ -203,6 +258,13 @@ function ZoomableImage({
       )}
     </>
   );
+}
+
+function ZoomableImage({ node: _node, ...imageProps }) {
+  const linked = useContext(MarkdownImageLinkContext);
+
+  if (linked) return <img {...imageProps} />;
+  return <LightboxImage {...imageProps} />;
 }
 
 export default ZoomableImage;
