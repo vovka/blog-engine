@@ -43,8 +43,8 @@ origin. Other file, HTTP, HTTPS, FTP, and malformed requests are aborted before 
 
 Image alternative text prefers `accDescr`, then `accTitle`, then `<article title> — diagram N`. Invalid diagrams
 report the repository-relative Markdown path, diagram ordinal, opening-fence line, and Mermaid's parse detail.
-Generated SVGs retain their viewBox and receive matching intrinsic dimensions so wide diagrams can scroll without
-being squeezed until their labels become unreadable.
+Generated SVGs retain their viewBox and receive matching intrinsic dimensions for a stable aspect ratio. The
+presentation scales every diagram to the width of its article or page container without horizontal overflow.
 
 ## How It Works
 
@@ -84,8 +84,9 @@ removes obsolete SVGs without launching Chromium. A failed render removes only s
 `vite.config.js` installs the asset plugin with the resolved `basePath`. Development requests are read only from
 `.geek-blog/mermaid`; production assets are copied to `dist/mermaid`. React Markdown uses the same remark, rehype,
 video, link, paragraph, and image components for regular posts, dialogue columns, and static pages. Mermaid images
-alone render in a labeled, keyboard-focusable horizontal scroll region. The region is a block-styled `span`, which
-remains valid when React Markdown places an image inside a paragraph, and prevents document-level overflow.
+remain plain image elements with a dedicated class that scales them to `width: 100%`, `max-width: 100%`, and
+`height: auto`. This fit-to-container behavior avoids document-level scrolling, though labels become smaller on
+narrow viewports. Ordinary Markdown images retain their existing rendering and styles.
 
 ## Configuration
 
