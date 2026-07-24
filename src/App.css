@@ -604,6 +604,15 @@ body {
   margin: 32px 0;
 }
 
+.blog-post-content .mermaid-diagram,
+.static-page-content .mermaid-diagram {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  margin: 32px auto;
+}
+
 .blog-post-video {
   width: 100%;
   height: auto;

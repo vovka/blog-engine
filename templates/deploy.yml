@@ -44,6 +44,15 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Configure Chrome sandbox
+        run: |
+          sandbox_path="$(find "$HOME/.cache/puppeteer" -type f -name chrome_sandbox -print -quit)"
+          test -n "$sandbox_path"
+          sudo cp -p "$sandbox_path" /usr/local/sbin/chrome-devel-sandbox
+          sudo chown root:root /usr/local/sbin/chrome-devel-sandbox
+          sudo chmod 4755 /usr/local/sbin/chrome-devel-sandbox
+          echo "CHROME_DEVEL_SANDBOX=/usr/local/sbin/chrome-devel-sandbox" >> "$GITHUB_ENV"
+
       - name: Process markdown posts
         run: npx blog-engine process
 
