@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import MarkdownImageLinkContext from './MarkdownImageLinkContext';
 import {
   ZOOM_STEP,
+  calculateAxisCompensation,
   calculateFitZoom,
   calculatePointerAnchor,
   calculatePointerScrollDelta,
@@ -38,6 +39,7 @@ function LightboxImage({
   const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 });
   const [fitZoom, setFitZoom] = useState(1);
   const [zoom, setZoom] = useState(1);
+  const [imageOffset, setImageOffset] = useState({ x: 0, y: 0 });
   const triggerRef = useRef(null);
   const lightboxRef = useRef(null);
   const viewportRef = useRef(null);
@@ -46,9 +48,48 @@ function LightboxImage({
   const zoomRef = useRef(1);
   const fitZoomRef = useRef(1);
   const fitSelectedRef = useRef(true);
+  const imageOffsetRef = useRef({ x: 0, y: 0 });
+  const positionResetFrameRef = useRef(null);
+  const pointerZoomFrameRef = useRef(null);
+  const pointerZoomRef = useRef(null);
   const hintId = useId();
 
-  const close = () => setOpen(false);
+  const clearPositionReset = () => {
+    if (positionResetFrameRef.current === null) return;
+
+    cancelAnimationFrame(positionResetFrameRef.current);
+    positionResetFrameRef.current = null;
+  };
+
+  const clearPointerZoom = () => {
+    pointerZoomRef.current = null;
+    if (pointerZoomFrameRef.current === null) return;
+
+    cancelAnimationFrame(pointerZoomFrameRef.current);
+    pointerZoomFrameRef.current = null;
+  };
+
+  const resetImagePosition = () => {
+    clearPositionReset();
+    clearPointerZoom();
+    imageOffsetRef.current = { x: 0, y: 0 };
+    setImageOffset(imageOffsetRef.current);
+
+    positionResetFrameRef.current = requestAnimationFrame(() => {
+      const viewport = viewportRef.current;
+      positionResetFrameRef.current = null;
+      if (!viewport) return;
+
+      viewport.scrollLeft = (viewport.scrollWidth - viewport.clientWidth) / 2;
+      viewport.scrollTop = (viewport.scrollHeight - viewport.clientHeight) / 2;
+    });
+  };
+
+  const close = () => {
+    clearPositionReset();
+    clearPointerZoom();
+    setOpen(false);
+  };
 
   const openLightbox = event => {
     event?.preventDefault();
@@ -63,6 +104,11 @@ function LightboxImage({
     fitSelectedRef.current = fitSelected;
     zoomRef.current = clampedValue;
     setZoom(clampedValue);
+    if (fitSelected) {
+      resetImagePosition();
+    } else {
+      clearPositionReset();
+    }
   };
 
   const zoomBy = factor => changeZoom(currentZoom => currentZoom * factor);
@@ -74,6 +120,7 @@ function LightboxImage({
     setFitZoom(nextFitZoom);
     if (!resetZoom && !fitSelectedRef.current) return;
 
+    resetImagePosition();
     fitSelectedRef.current = true;
     zoomRef.current = nextFitZoom;
     setZoom(nextFitZoom);
@@ -118,19 +165,50 @@ function LightboxImage({
       return;
     }
 
-    const anchor = calculatePointerAnchor(event.clientX, event.clientY, image.getBoundingClientRect());
+    clearPositionReset();
+    if (!pointerZoomRef.current) {
+      pointerZoomRef.current = {
+        anchor: calculatePointerAnchor(event.clientX, event.clientY, image.getBoundingClientRect()),
+        clientX: event.clientX,
+        clientY: event.clientY,
+      };
+    }
 
     changeZoom(nextZoom);
+    if (pointerZoomFrameRef.current !== null) return;
 
-    requestAnimationFrame(() => {
+    pointerZoomFrameRef.current = requestAnimationFrame(() => {
+      const pointerZoom = pointerZoomRef.current;
+      pointerZoomFrameRef.current = null;
+      pointerZoomRef.current = null;
+      if (!pointerZoom) return;
+
       const delta = calculatePointerScrollDelta(
-        event.clientX,
-        event.clientY,
-        anchor,
+        pointerZoom.clientX,
+        pointerZoom.clientY,
+        pointerZoom.anchor,
         image.getBoundingClientRect(),
       );
-      viewport.scrollLeft += delta.left;
-      viewport.scrollTop += delta.top;
+      const horizontal = calculateAxisCompensation(
+        delta.left,
+        viewport.scrollLeft,
+        Math.max(0, viewport.scrollWidth - viewport.clientWidth),
+        imageOffsetRef.current.x,
+      );
+      const vertical = calculateAxisCompensation(
+        delta.top,
+        viewport.scrollTop,
+        Math.max(0, viewport.scrollHeight - viewport.clientHeight),
+        imageOffsetRef.current.y,
+      );
+
+      viewport.scrollLeft = horizontal.scroll;
+      viewport.scrollTop = vertical.scroll;
+      imageOffsetRef.current = {
+        x: horizontal.offset + viewport.scrollLeft - horizontal.scroll,
+        y: vertical.offset + viewport.scrollTop - vertical.scroll,
+      };
+      setImageOffset(imageOffsetRef.current);
     });
   };
 
@@ -164,6 +242,8 @@ function LightboxImage({
     document.addEventListener('keydown', handleKeyDown);
 
     return () => {
+      clearPositionReset();
+      clearPointerZoom();
       document.body.style.overflow = previousOverflow;
       document.removeEventListener('keydown', handleKeyDown);
       triggerRef.current?.focus();
@@ -249,7 +329,10 @@ function LightboxImage({
                 className="image-lightbox__image"
                 draggable="false"
                 onLoad={handleLightboxImageLoad}
-                style={{ width: imageWidth }}
+                style={{
+                  width: imageWidth,
+                  transform: `translate(${imageOffset.x}px, ${imageOffset.y}px)`,
+                }}
               />
             </div>
           </div>

@@ -36,6 +36,16 @@ export function calculatePointerScrollDelta(clientX, clientY, anchor, rect) {
   };
 }
 
+export function calculateAxisCompensation(delta, scroll, maxScroll, offset = 0) {
+  const visualOffset = offset - scroll - delta;
+  const nextScroll = Math.min(maxScroll, Math.max(0, -visualOffset));
+
+  return {
+    scroll: nextScroll,
+    offset: visualOffset + nextScroll,
+  };
+}
+
 export function findFocusWrapTarget(event, focusable, active, containsActive) {
   if (!focusable.length) return null;
 

@@ -34,13 +34,15 @@ natural size, while oversized images fit the available viewport.
 
 Toolbar buttons zoom out, zoom in, restore the fit zoom, or select 100%. The displayed zoom percentage is announced
 as live status. A non-passive native wheel listener makes Ctrl+wheel zoom around the same image point under the
-pointer; regular scrolling pans overflowed content. The keyboard shortcuts are Escape to close, `+` or `=` to zoom
-in, `-` to zoom out, `0` to fit, and `1` for 100%. Modified shortcuts are left to the browser.
+pointer. Scroll range supplies that compensation first; a temporary image offset retains any residual on centered
+or scroll-bound axes and returns to scrolling when range becomes available. Regular scrolling pans overflowed
+content. The keyboard shortcuts are Escape to close, `+` or `=` to zoom in, `-` to zoom out, `0` to fit, and `1`
+for 100%. Modified shortcuts are left to the browser.
 
 Opening locks body scrolling and focuses the close button. Closing restores the previous body overflow value and
-focuses the originating image. Tab and Shift+Tab wrap within the dialog. Fit is recalculated after a resize or
-orientation change, and remains selected across that change only when the reader had not chosen another zoom.
-Zoom is clamped from 5% through 500%.
+focuses the originating image. Tab and Shift+Tab wrap within the dialog. Fit clears pointer offsets and re-centers
+the image after layout. It is recalculated after a resize or orientation change, and remains selected across that
+change only when the reader had not chosen another zoom. Zoom is clamped from 5% through 500%.
 
 ## Integration Points
 
@@ -73,6 +75,8 @@ widths below 720px. Confirm cards, avatars, and static-page images do not open t
 - Restore the exact pre-existing body overflow value during effect cleanup.
 - Update both the fit state and its ref after image load so toolbar and document-level shortcuts use the same value.
 - Register Ctrl+wheel natively with `{ passive: false }`; React 19 delegates wheel events passively.
+- Compensate pointer zoom per axis so scroll clamping leaves an explicit image offset rather than losing the anchor.
+- Coalesce same-frame wheel events around their first stable pointer anchor before applying the final compensation.
 - Keep linked Markdown images as links to avoid nesting a button-like image trigger inside an anchor.
 - Keep the cover focus outline inset because `.blog-post-image` clips overflow.
 - The viewer is browser-only; `calculateFitZoom` guards access to `window`.

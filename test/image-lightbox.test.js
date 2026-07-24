@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import react from '@vitejs/plugin-react';
 import { createServer } from 'vite';
 import {
+  calculateAxisCompensation,
   calculateFitZoom,
   calculatePointerAnchor,
   calculatePointerScrollDelta,
@@ -36,6 +37,54 @@ test('keeps the same image point under the pointer after zoom', () => {
 
   assert.deepEqual(anchor, { x: 0.5, y: 0.5 });
   assert.deepEqual(delta, { left: 140, top: 70 });
+});
+
+test('uses image offset when centered content has no scroll range', () => {
+  assert.deepEqual(calculateAxisCompensation(40, 0, 0), {
+    scroll: 0,
+    offset: -40,
+  });
+  assert.deepEqual(calculateAxisCompensation(-25, 0, 0), {
+    scroll: 0,
+    offset: 25,
+  });
+});
+
+test('uses scrolling first and keeps only clamped pointer residual', () => {
+  assert.deepEqual(calculateAxisCompensation(30, 20, 100), {
+    scroll: 50,
+    offset: 0,
+  });
+  assert.deepEqual(calculateAxisCompensation(30, 90, 100), {
+    scroll: 100,
+    offset: -20,
+  });
+  assert.deepEqual(calculateAxisCompensation(-30, 10, 100), {
+    scroll: 0,
+    offset: 20,
+  });
+  assert.deepEqual(calculateAxisCompensation(20, 0, 100, -40), {
+    scroll: 60,
+    offset: 0,
+  });
+});
+
+test('composes rapid pointer compensation without accumulating drift', () => {
+  let position = { scroll: 0, offset: 0 };
+  let expectedVisualPosition = 0;
+
+  for (const [delta, maxScroll] of [[35, 0], [25, 100], [70, 100], [-50, 100]]) {
+    position = calculateAxisCompensation(
+      delta,
+      position.scroll,
+      maxScroll,
+      position.offset,
+    );
+    expectedVisualPosition -= delta;
+    assert.equal(position.offset - position.scroll, expectedVisualPosition);
+  }
+
+  assert.deepEqual(position, { scroll: 80, offset: 0 });
 });
 
 test('wraps focus at both modal boundaries and when focus escapes', () => {
