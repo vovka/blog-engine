@@ -15,6 +15,12 @@ import './ZoomableImage.css';
 
 const FOCUSABLE_SELECTOR = 'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])';
 
+function imageTriggerLabel(alt) {
+  const label = (alt || 'Image').trim();
+  const separator = /[.!?…]$/u.test(label) ? ' ' : '. ';
+  return `${label}${separator}Open full-size viewer`;
+}
+
 function trapFocus(event, lightbox) {
   if (event.key !== 'Tab' || !lightbox) return;
 
@@ -286,7 +292,7 @@ function LightboxImage({
         className={imageClassName}
         role="button"
         tabIndex={0}
-        aria-label={`${alt || 'Image'}. Open full-size viewer`}
+        aria-label={imageTriggerLabel(alt)}
         onClick={handleInlineClick}
         onKeyDown={handleInlineKeyDown}
       />
