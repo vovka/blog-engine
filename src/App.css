@@ -604,6 +604,34 @@ body {
   margin: 32px 0;
 }
 
+.mermaid-diagram-scroll {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  box-sizing: border-box;
+  margin: 32px 0;
+  overscroll-behavior-inline: contain;
+}
+
+.mermaid-diagram-scroll:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+.blog-post-content .mermaid-diagram-scroll .mermaid-diagram,
+.static-page-content .mermaid-diagram-scroll .mermaid-diagram {
+  display: block;
+  width: auto;
+  min-width: 100%;
+  max-width: none;
+  height: auto;
+  margin: 0;
+}
+
 .blog-post-video {
   width: 100%;
   height: auto;

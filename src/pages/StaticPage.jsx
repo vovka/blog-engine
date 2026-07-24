@@ -1,10 +1,13 @@
 import { useLocation, Navigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeHighlight from 'rehype-highlight';
 import { getPageBySlug } from '@content/pages';
 import Layout from '../components/layout/Layout';
 import PageMetadata from '../components/analytics/PageMetadata';
+import {
+  markdownComponents,
+  markdownRehypePlugins,
+  markdownRemarkPlugins,
+} from '../components/blog/markdownConfig';
 
 function StaticPage() {
   const location = useLocation();
@@ -22,8 +25,9 @@ function StaticPage() {
       <div className="static-page-container">
         <div className="static-page-content">
           <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeHighlight]}
+            remarkPlugins={markdownRemarkPlugins}
+            rehypePlugins={markdownRehypePlugins}
+            components={markdownComponents}
           >
             {page.content}
           </ReactMarkdown>
