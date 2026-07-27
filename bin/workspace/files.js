@@ -14,14 +14,16 @@ export const digestText = value => crypto.createHash('sha256').update(value).dig
 
 export const digestFile = file => digestText(fs.readFileSync(file));
 
-const walk = directory => fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
+const walk = (directory, ignoredDirectories) => fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
   const target = path.join(directory, entry.name);
-  return entry.isDirectory() ? walk(target) : [target];
+  if (!entry.isDirectory()) return [target];
+  return ignoredDirectories.has(entry.name) ? [] : walk(target, ignoredDirectories);
 });
 
-export const digestDirectory = directory => {
+export const digestDirectory = (directory, options = {}) => {
   const hash = crypto.createHash('sha256');
-  walk(directory).sort().forEach(file => {
+  const ignoredDirectories = new Set(options.ignoredDirectories);
+  walk(directory, ignoredDirectories).sort().forEach(file => {
     hash.update(path.relative(directory, file).replaceAll(path.sep, '/'));
     hash.update(fs.readFileSync(file));
   });

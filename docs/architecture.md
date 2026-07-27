@@ -2,8 +2,8 @@
 
 ## Repository Roles
 
-`geek-blog/blog-engine` is authoritative and public under ISC. `vovka/blog-engine` is a synchronized public
-fallback, never an official dependency. `geek-blog/blog-enhancer` is private proprietary tooling.
+`geek-blog/blog-engine` is authoritative and public under ISC. `geek-blog/blog-enhancer` is private proprietary
+tooling.
 
 ## Consumer Flow
 
@@ -27,7 +27,6 @@ Analytics is disabled and indexing is denied by default. Development and test di
 production builds reject malformed canonical URLs, hosts, provider IDs, indexing settings, and consent settings.
 Content processing derives both `public/robots.txt` and `public/sitemap.xml` from the same resolved configuration.
 
-## Release And Mirror
+## Release
 
-Consumers update explicit canonical SHAs through `workspace update`. The fallback mirror receives canonical commits
-and tags without force-pushing or rewriting its existing public history. Drift checks compare source trees and tags.
+Consumers update explicit canonical SHAs through `workspace update`.

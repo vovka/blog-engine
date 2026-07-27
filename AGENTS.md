@@ -2,7 +2,6 @@
 
 `geek-blog/blog-engine` is the canonical public ISC-licensed engine.
 
-- Never add an official dependency on `vovka/blog-engine`; it is fallback-only.
 - Keep consumer dependencies as `file:.yalc/blog-engine`.
 - Require exact 40-character canonical commit pins in `geek-blog.lock.json`.
 - Keep substantive bootstrap behavior in `bin/workspace/`; launchers must stay dependency-free and small.

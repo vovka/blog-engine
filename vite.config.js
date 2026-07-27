@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { loadBlogConfig } from './src/config/loadBlogConfig.js';
 import { createContentAliases } from './src/content/createContentAliases.js';
+import { mermaidAssetsPlugin } from './src/vite/mermaidAssetsPlugin.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -41,7 +42,12 @@ export default defineConfig(async ({ command, mode }) => {
   });
   return {
     envDir: projectRoot,
-    plugins: [configPlugin(config), react(), copy404Plugin()],
+    plugins: [
+      configPlugin(config),
+      mermaidAssetsPlugin(projectRoot, config.basePath),
+      react(),
+      copy404Plugin(),
+    ],
     root: path.resolve(__dirname),
     publicDir: path.resolve(projectRoot, 'public'),
     build: { outDir: path.resolve(projectRoot, 'dist'), emptyOutDir: true },
